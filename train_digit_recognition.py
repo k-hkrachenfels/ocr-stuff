@@ -8,11 +8,10 @@ from torchvision import transforms
 from torch.optim.lr_scheduler import StepLR
 from datasets import MNIST
 
-
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv1 = nn.Conv2d(3, 32, 3, 1)
         self.conv2 = nn.Conv2d(32, 64, 3, 1)
         self.dropout1 = nn.Dropout(0.25)
         self.dropout2 = nn.Dropout(0.5)
@@ -34,6 +33,27 @@ class Net(nn.Module):
         output = F.log_softmax(x, dim=1)
         return output
 
+class FullyConnectedNet(nn.Module):
+    def __init__(self):
+        super(FullyConnectedNet, self).__init__()
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc0 = nn.Linear(2352, 1024)
+        self.fc1 = nn.Linear(1024, 128)
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = torch.flatten(x, 1)
+        x = self.fc0(x)
+        x = F.relu(x) 
+        #x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        #x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -78,12 +98,12 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=14, metavar='N',
-                        help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
-                        help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
-                        help='Learning rate step gamma (default: 0.7)')
+    parser.add_argument('--epochs', type=int, default=1000, metavar='N',
+                        help='number of epochs to train (default: 1000)')
+    parser.add_argument('--lr', type=float, default=1, metavar='LR',
+                        help='learning rate (default: 1)')
+    parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
+                        help='Learning rate step gamma (default: 0.99)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--no-mps', action='store_true', default=False,
@@ -125,16 +145,24 @@ def main():
     transform=transforms.Compose([
         transforms.Resize((28,28)),
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        #transforms.Normalize((0.1307,), (0.3081,))
         ])
+
+    #todo: rename
     dataset1 = MNIST('../data', train=True, download=True,
                        transform=transform)
-    dataset2 = MNIST('../data', train=False,
-                       transform=transform)
-    train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = Net().to(device)
+    # todo: needs split of datset before enabling
+    # dataset2 = MNIST('../data', train=False,
+    #                    transform=transform)
+
+    train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
+
+    # todo: curently test=train, needs split
+    #test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+    test_loader = torch.utils.data.DataLoader(dataset1, **test_kwargs)
+
+    model = FullyConnectedNet().to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
