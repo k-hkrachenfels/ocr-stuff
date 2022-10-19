@@ -4,8 +4,6 @@ from PIL.ImageDraw import Draw
 from PIL import ImageEnhance
 from typing import List
 
-
-
 def pretty_print_ocr(ocr_result_list: List):
     for points,text,score in ocr_result_list:
         print(f"text={text}, score:{score}, rect={points}")
@@ -56,7 +54,7 @@ def extract_image_patch(coords: List[int], in_file_name: str, out_file_name: str
         patch = im.crop(coords)
         patch.save(out_file_name)
 
-basename="esp32-ov2640-patch"
+basename="rotated"
 extension="png"
 input_file=f"bilder/{basename}.{extension}"
 output_file=f"bilder/{basename}_results.{extension}"
