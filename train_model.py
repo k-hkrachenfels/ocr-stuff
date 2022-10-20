@@ -36,8 +36,8 @@ class Net(nn.Module):
 
 class Net56(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, 3, 1)
+        super(Net56, self).__init__()
+        self.conv0 = nn.Conv2d(3, 16, 3, 1)
         self.conv1 = nn.Conv2d(16, 32, 3, 1)
         self.conv2 = nn.Conv2d(32, 64, 3, 1)
         self.dropout1 = nn.Dropout(0.25)
@@ -142,12 +142,12 @@ def get_args():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=64, metavar='N',
                         help='input batch size for testing (default: 64)')
-    parser.add_argument('--epochs', type=int, default=10000, metavar='N',
-                        help='number of epochs to train (default: 10000)')
+    parser.add_argument('--epochs', type=int, default=1000, metavar='N',
+                        help='number of epochs to train (default: 1000)')
     parser.add_argument('--lr', type=float, default=1, metavar='LR',
                         help='learning rate (default: 1)')
-    parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
-                        help='Learning rate step gamma (default: 0.99)')
+    parser.add_argument('--gamma', type=float, default=0.999, metavar='M',
+                        help='Learning rate step gamma (default: 0.999)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--no-mps', action='store_true', default=False,
@@ -183,16 +183,22 @@ def get_test_kwargs(args, device):
 
 def get_train_transforms():
     return transforms.Compose([
-        transforms.Resize((28,28)),
+        transforms.ColorJitter(brightness=(0.5, 2),contrast=(1),saturation=(0.9,1.1),hue=(-0.1,0.1)),
+        transforms.Resize((56,56)),
         transforms.ToTensor(),    
         transforms.Normalize((0.1307,), (0.3081,)),
         ])
 
 def get_test_transforms():
-    return get_train_transforms()
+    return transforms.Compose([
+       # transforms.ColorJitter(brightness=(0.5,1.5),contrast=(1),saturation=(0.5,1.5),hue=(-0.1,0.1)),
+        transforms.Resize((56,56)),
+        transforms.ToTensor(),    
+        transforms.Normalize((0.1307,), (0.3081,)),
+        ])
 
 def get_model(device):
-    model = Net().to(device)
+    model = Net56().to(device)
     return model
 
 def main():
@@ -216,8 +222,9 @@ def main():
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         scheduler.step()
-        if epoch%100==0:
-            test(model, device, test_loader)       
+        print(scheduler.get_lr())
+        #if epoch%100==0:
+        #    test(model, device, test_loader)       
 
     if args.save_model:
         torch.save(model.state_dict(), "solar_controller_digit_model.pth")

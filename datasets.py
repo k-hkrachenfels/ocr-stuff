@@ -31,13 +31,11 @@ class DigitDataset(VisionDataset):
         root: str,
         train: bool = True,
         transform: Optional[Callable] = None,
-        logging: bool = False
     ) -> None:
         super().__init__(root, transform=transform)
         self.root = root
         self.train = train  
         self.data, self.targets = self._load_data()
-        self.logging = logging
 
     def _load_data(self):   
         targets = []
@@ -73,12 +71,6 @@ class DigitDataset(VisionDataset):
 
         if self.target_transform is not None:
             target = self.target_transform(target)
-
-        if self.logging:
-            transform = torchvision.transforms.ToPILImage()
-            pil_img = transform(img)
-            pil_img.save("log/aug.png")
-            print("logging")
 
         return img, target
 

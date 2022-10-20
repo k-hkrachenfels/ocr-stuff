@@ -5,7 +5,7 @@ import time
 
 from torchvision import transforms
 import torch
-from train_digit_recognition import get_test_kwargs, \
+from train_model import get_test_kwargs, \
     get_test_transforms, init_device, get_args, \
     get_test_kwargs, get_test_transforms, get_model
 from datasets import DigitDataset
