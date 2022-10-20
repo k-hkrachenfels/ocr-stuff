@@ -1,12 +1,13 @@
 from __future__ import print_function
 import argparse
+import re
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
 from torch.optim.lr_scheduler import StepLR
-from datasets import MNIST
+from datasets import DigitDataset
 
 class Net(nn.Module):
     def __init__(self):
@@ -21,6 +22,35 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
+
+class Net56(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(3, 16, 3, 1)
+        self.conv1 = nn.Conv2d(16, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = self.conv0(x)
+        x = F.relu(x)
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
         x = self.conv2(x)
         x = F.relu(x)
         x = F.max_pool2d(x, 2)
@@ -90,16 +120,30 @@ def test(model, device, test_loader):
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
+def init_device( args ):
+    use_cuda = not args.no_cuda and torch.cuda.is_available()   
+    use_mps = not args.no_mps and torch.backends.mps.is_available()  
+    torch.manual_seed(args.seed)
 
-def main():
+    if use_cuda:
+        device = torch.device("cuda")
+    elif use_mps:
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
+    print(f"Using device {device}")
+    return device
+
+def get_args():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-                        help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=1000, metavar='N',
-                        help='number of epochs to train (default: 1000)')
+    parser.add_argument('--test-batch-size', type=int, default=64, metavar='N',
+                        help='input batch size for testing (default: 64)')
+    parser.add_argument('--epochs', type=int, default=10000, metavar='N',
+                        help='number of epochs to train (default: 10000)')
     parser.add_argument('--lr', type=float, default=1, metavar='LR',
                         help='learning rate (default: 1)')
     parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
@@ -114,66 +158,69 @@ def main():
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=False,
+    parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
     args = parser.parse_args()
-    use_cuda = not args.no_cuda and torch.cuda.is_available()
-    
-    use_mps = not args.no_mps and torch.backends.mps.is_available()
-    
+    return args
 
-    torch.manual_seed(args.seed)
-
-    if use_cuda:
-        device = torch.device("cuda")
-    elif use_mps:
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
-
-    print(f"Using device {device}")
-
-    train_kwargs = {'batch_size': args.batch_size}
-    test_kwargs = {'batch_size': args.test_batch_size}
-    if use_cuda:
+def update_cuda_kwargs(kwargs, device):
+    if str(device) == "cuda":
         cuda_kwargs = {'num_workers': 1,
                        'pin_memory': True,
                        'shuffle': True}
-        train_kwargs.update(cuda_kwargs)
-        test_kwargs.update(cuda_kwargs)
+        kwargs.update(cuda_kwargs)
+    return kwargs
 
-    transform=transforms.Compose([
+def get_train_kwargs(args, device):
+    train_kwargs = {'batch_size': args.batch_size}
+    train_kwargs = update_cuda_kwargs(train_kwargs, device)
+    return train_kwargs
+
+def get_test_kwargs(args, device):
+    test_kwargs = {'batch_size': args.test_batch_size}
+    test_kwargs = update_cuda_kwargs(test_kwargs, device)
+    return test_kwargs
+
+def get_train_transforms():
+    return transforms.Compose([
         transforms.Resize((28,28)),
-        transforms.ToTensor(),
-        #transforms.Normalize((0.1307,), (0.3081,))
+        transforms.ToTensor(),    
+        transforms.Normalize((0.1307,), (0.3081,)),
         ])
 
-    #todo: rename
-    dataset1 = MNIST('../data', train=True, download=True,
-                       transform=transform)
+def get_test_transforms():
+    return get_train_transforms()
 
-    # todo: needs split of datset before enabling
-    # dataset2 = MNIST('../data', train=False,
-    #                    transform=transform)
+def get_model(device):
+    model = Net().to(device)
+    return model
 
-    train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
+def main():
+    args = get_args() 
+    device = init_device(args)
+    test_kwargs = get_test_kwargs(args, device)
+    train_kwargs = get_train_kwargs(args, device)
+    train_transforms = get_train_transforms()
+    test_transforms = get_test_transforms()
 
-    # todo: curently test=train, needs split
-    #test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset1, **test_kwargs)
+    dataset = DigitDataset('./training_data', train=True, transform=train_transforms)
+    dataset_test = DigitDataset('./apply', train=False, transform=test_transforms)
 
-    model = FullyConnectedNet().to(device)
+    train_loader = torch.utils.data.DataLoader(dataset,**train_kwargs)
+    test_loader = torch.utils.data.DataLoader(dataset_test, **test_kwargs)
+    
+    model = get_model(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(model, device, test_loader)
         scheduler.step()
+        if epoch%100==0:
+            test(model, device, test_loader)       
 
     if args.save_model:
-        torch.save(model.state_dict(), "mnist_cnn.pt")
-
+        torch.save(model.state_dict(), "solar_controller_digit_model.pth")
 
 if __name__ == '__main__':
     main()

@@ -19,57 +19,42 @@ from torchvision.datasets.utils import check_integrity, download_and_extract_arc
 from torchvision.datasets.vision import VisionDataset
 
 
-class MNIST(VisionDataset):
-    """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
+class DigitDataset(VisionDataset):
+    """Dataset for digit recognition
     Args:
-        root (string): Root directory of dataset where ``MNIST/raw/train-images-idx3-ubyte``
-            and  ``MNIST/raw/t10k-images-idx3-ubyte`` exist.
-        train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
-            otherwise from ``t10k-images-idx3-ubyte``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
+        root (string): Root directory of dataset 
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it.
     """
-
-    classes = [
-        "0 - zero",
-        "1 - one",
-        "2 - two",
-        "3 - three",
-        "4 - four",
-        "5 - five",
-        "6 - six",
-        "7 - seven",
-        "8 - eight",
-        "9 - nine",
-    ]
-
     def __init__(
         self,
         root: str,
         train: bool = True,
         transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        download: bool = False,
+        logging: bool = False
     ) -> None:
-        super().__init__(root, transform=transform, target_transform=target_transform)
-        self.train = train  # training set or test set
+        super().__init__(root, transform=transform)
+        self.root = root
+        self.train = train  
         self.data, self.targets = self._load_data()
+        self.logging = logging
 
-    def _load_data(self):
-        label_file_name = f"{'training_data/labels.txt' if self.train else None}"
+    def _load_data(self):   
         targets = []
-        with open(label_file_name) as label_file:
-            for line in label_file:
-                targets.append(int(line))
+        if self.train:
+            label_file_name = f"{self.root}/labels.txt"
+            with open(label_file_name) as label_file:
+                for line in label_file:
+                    targets.append(int(line))
+            dataset_len = len(targets)
+        else:
+            #todo: count images, this is hack
+            dataset_len = 9
+            targets=[0]*9
 
         data = []
-        for i in range(len(targets)):
-            img = Image.open(f"training_data/img_{i}.png")
+        for i in range(dataset_len):
+            img = Image.open(f"{self.root}/img_{i}.png")
             data.append(img)
 
         return data, targets
@@ -88,6 +73,12 @@ class MNIST(VisionDataset):
 
         if self.target_transform is not None:
             target = self.target_transform(target)
+
+        if self.logging:
+            transform = torchvision.transforms.ToPILImage()
+            pil_img = transform(img)
+            pil_img.save("log/aug.png")
+            print("logging")
 
         return img, target
 
