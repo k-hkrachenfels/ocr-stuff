@@ -1,2 +1,13 @@
 digits/*.png
 __pycache__
+log*
+bilder
+tmp
+apply
+digits
+error
+error_log
+error2
+digits.sv
+.ipynb*
+**/.DS_Store

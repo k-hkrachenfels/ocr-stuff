@@ -12,11 +12,11 @@ from datasets import DigitDataset
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.conv1 = nn.Conv2d(3, 32, 3, 1, padding='same')
+        self.conv2 = nn.Conv2d(32, 64, 3, 1, padding='same')
         self.dropout1 = nn.Dropout(0.25)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(9216, 128)
+        self.fc1 = nn.Linear(12544 , 128) #9216 if not using same
         self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
@@ -36,13 +36,14 @@ class Net(nn.Module):
 
 class Net56(nn.Module):
     def __init__(self):
+        #expected size 56x56
         super(Net56, self).__init__()
-        self.conv0 = nn.Conv2d(3, 16, 3, 1)
-        self.conv1 = nn.Conv2d(16, 32, 3, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.conv0 = nn.Conv2d(3, 32, 3, 1)
+        self.conv1 = nn.Conv2d(32, 64, 3, 1)
+        self.conv2 = nn.Conv2d(64, 128, 3, 1)
         self.dropout1 = nn.Dropout(0.25)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(9216, 128)
+        self.fc1 = nn.Linear(3200, 128)
         self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
@@ -138,16 +139,16 @@ def init_device( args ):
 def get_args():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
-                        help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=64, metavar='N',
-                        help='input batch size for testing (default: 64)')
+    parser.add_argument('--batch-size', type=int, default=128, metavar='N',
+                        help='input batch size for training (default: 128)')
+    parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
+                        help='input batch size for testing (default: 128)')
     parser.add_argument('--epochs', type=int, default=1000, metavar='N',
                         help='number of epochs to train (default: 1000)')
     parser.add_argument('--lr', type=float, default=1, metavar='LR',
                         help='learning rate (default: 1)')
-    parser.add_argument('--gamma', type=float, default=0.999, metavar='M',
-                        help='Learning rate step gamma (default: 0.999)')
+    parser.add_argument('--gamma', type=float, default=0.997, metavar='M',
+                        help='Learning rate step gamma (default: 0.997)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--no-mps', action='store_true', default=False,
@@ -183,8 +184,9 @@ def get_test_kwargs(args, device):
 
 def get_train_transforms():
     return transforms.Compose([
-        transforms.ColorJitter(brightness=(0.5, 2),contrast=(1),saturation=(0.9,1.1),hue=(-0.1,0.1)),
-        transforms.Resize((56,56)),
+        transforms.ColorJitter(brightness=(0.2, 3),contrast=(1),saturation=(0.9,1.1),hue=(-0.1,0.1)),
+        transforms.RandomRotation(5),
+        transforms.Resize((28,28)),
         transforms.ToTensor(),    
         transforms.Normalize((0.1307,), (0.3081,)),
         ])
@@ -192,7 +194,7 @@ def get_train_transforms():
 def get_test_transforms():
     return transforms.Compose([
        # transforms.ColorJitter(brightness=(0.5,1.5),contrast=(1),saturation=(0.5,1.5),hue=(-0.1,0.1)),
-        transforms.Resize((56,56)),
+        transforms.Resize((28,28)),
         transforms.ToTensor(),    
         transforms.Normalize((0.1307,), (0.3081,)),
         ])
@@ -222,12 +224,13 @@ def main():
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         scheduler.step()
-        print(scheduler.get_lr())
-        #if epoch%100==0:
-        #    test(model, device, test_loader)       
+        
+        if epoch%100==0:
+            test(model, device, test_loader)   
+            print(scheduler.get_last_lr())    
 
     if args.save_model:
-        torch.save(model.state_dict(), "solar_controller_digit_model.pth")
+        torch.save(model.state_dict(), "model.pth")
 
 if __name__ == '__main__':
     main()
