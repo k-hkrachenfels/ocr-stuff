@@ -1,22 +1,22 @@
 
 # in case the camera moves you can apply this offset as correction 
 calibration:
-  x: 0
-  y: 0
+  x: 280
+  y: 30
 
 # per sensor define a list of boxes (as array in order left,top,right,bottom) for the digits from left 
 # to right.
 sensors:
   kollektor:
     - digit_box:
-      - 16
+      - 70
       - 600
-      - 136
+      - 180
       - 760
     - digit_box:
-      - 136
+      - 180
       - 600
-      - 256
+      - 300
       - 760
     - digit_box:
       - 376
@@ -27,34 +27,34 @@ sensors:
   
   puffer_oben:
     - digit_box:
-      - 16
-      - 780
-      - 136
-      - 940
+      - 70
+      - 750
+      - 190
+      - 920
     - digit_box:
-      - 136
-      - 780
-      - 256
-      - 940
+      - 180
+      - 750
+      - 300
+      - 920
     - digit_box:
       - 376
-      - 780
+      - 750
       - 506
-      - 940
+      - 920
 
   puffer_unten:
     - digit_box:
-      - 16
-      - 960
-      - 146
-      - 1120
+      - 70
+      - 920
+      - 190
+      - 1080
     - digit_box:
-      - 136
-      - 960
-      - 266
-      - 1120
+      - 180
+      - 920
+      - 300
+      - 1080
     - digit_box:
       - 376
-      - 960
+      - 920
       - 506
-      - 1120
+      - 1080

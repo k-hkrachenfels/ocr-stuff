@@ -25,6 +25,8 @@ def extract_digits( in_file_name: str, output_folder: str):
         sensor_dict = calibrated_sensors
         with Image.open(in_file_name) as im:
             im = im.rotate(180)
+            im = im.rotate(
+                1, Image.BICUBIC )
             im.save("bilder/rotated.png")
             global_index=0
             for sensor_key in sensor_dict.keys():
@@ -35,4 +37,4 @@ def extract_digits( in_file_name: str, output_folder: str):
                     global_index+=1
             
 if __name__ == "__main__":
-    extract_digits("bilder/patch3.png", "digits")
+    extract_digits("bilder/rotated.png", "apply")

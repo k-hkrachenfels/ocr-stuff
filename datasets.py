@@ -39,16 +39,15 @@ class DigitDataset(VisionDataset):
 
     def _load_data(self):   
         targets = []
-        if self.train:
-            label_file_name = f"{self.root}/labels.txt"
+        label_file_name = f"{self.root}/labels.txt"
+        if os.path.exists(label_file_name):
             with open(label_file_name) as label_file:
                 for line in label_file:
                     targets.append(int(line))
             dataset_len = len(targets)
         else:
-            #todo: count images, this is hack
-            dataset_len = 9
-            targets=[0]*9
+            raise "invalid dataset - no labels found"
+
 
         data = []
         for i in range(dataset_len):
