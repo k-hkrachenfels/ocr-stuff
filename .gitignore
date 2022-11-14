@@ -11,3 +11,4 @@ error2
 digits.sv
 .ipynb*
 **/.DS_Store
+**/*.pth

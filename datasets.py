@@ -46,7 +46,9 @@ class DigitDataset(VisionDataset):
                     targets.append(int(line))
             dataset_len = len(targets)
         else:
-            raise "invalid dataset - no labels found"
+            # no labels in case we apply model for inference
+            dataset_len = 9
+            targets=[0]*9
 
 
         data = []

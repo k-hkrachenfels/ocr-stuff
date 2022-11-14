@@ -1,8 +1,8 @@
 
 # in case the camera moves you can apply this offset as correction 
 calibration:
-  x: 280
-  y: 30
+  x: 290
+  y: 40
 
 # per sensor define a list of boxes (as array in order left,top,right,bottom) for the digits from left 
 # to right.
